@@ -11,22 +11,12 @@ class ScheduleGenerator extends ScheduleConfig
 {
     /*
      * get info from Jira
+     * @param wikimarkup|html $printingStyle
      * @return string $result
      */
-    public function getInfo() {
+    public function getInfo($printingStyle) {
 	
-	$schedule = "
-	    <table width='100%' border='1'>
-		<tr>
-		    <th>Сотрудник</th>
-		    <th>Проект</th>
-		    <th>Описание задачи</th>
-		    <th>Сложность</th>
-		    <th>Результат</th>
-		    <th>Затраченное время</th>
-		    <th>Пояснения</th>
-		</tr>
-	";
+	$schedule = $this->styles[$printingStyle]["header"];
 
 	$headers = array(
     	    'Accept: application/json',
@@ -72,43 +62,76 @@ class ScheduleGenerator extends ScheduleConfig
 	    $storyPointsByUser = 0;
 	    
 	    for($m=0; $m<$countArray; $m++) {
-		$scheduleByUser .= "
-			<tr>
-			    <td></td>
-			    <td>".$resultArray["issues"][$m]["fields"]["project"]["key"]."</td>
-			    <td>".$resultArray["issues"][$m]["fields"]["summary"]."</td>
-			    <td>".$resultArray["issues"][$m]["fields"]["customfield_10710"]."</td>
-			    <td></td>
-			    <td></td>
-			    <td></td>
-			</tr>
-		";
+		$scheduleByUser .= $this->getStyled($printingStyle, "issue", $resultArray["issues"][$m]["fields"]);
 		
 		$storyPointsByUser = $storyPointsByUser + $resultArray["issues"][$m]["fields"]["customfield_10710"];
 	    }
 
-	    $schedule .= "
-		<tr>
-		    <td>".$this->users[$i][1]."</td>
-		    <td></td>
-		    <td></td>
-		    <td>∑".$storyPointsByUser."</td>
-		    <td></td>
-		    <td>∑</td>
-		    <td></td>
-		</tr>
-	    ".$scheduleByUser;
-	    
-	    /*echo "<pre>";
-	    print_r ($resultArray["issues"]);
-	    echo "</pre>";*/
+	    $schedule .= $this->getStyled($printingStyle, "user", $this->users[$i], $storyPointsByUser).$scheduleByUser;
 	}
 	
-	$schedule .= "</table>";
+	$schedule .= $this->styles[$printingStyle]["footer"];
 	
 	return $schedule;
+    }
+    
+    /*
+     * create a stylish fields
+     * @param wikimarkup|html $printingStyle
+     * @param user|issue $field
+     * @param array() $data
+     * @param int $storyPointsByUser
+     * @return string $result
+     */
+    public function getStyled($printingStyle, $field, $data, $storyPointsByUser = 0) {
+	if($printingStyle == "wikimarkup") {
+	    if($field == "issue") {
+		$result = $this->styles[$printingStyle]["td"]." ".
+			  $this->styles[$printingStyle]["td"].$data["project"]["key"]." ".
+			  $this->styles[$printingStyle]["td"].$data["summary"]." ".
+			  $this->styles[$printingStyle]["td"].$data["customfield_10710"]." ".
+			  $this->styles[$printingStyle]["td"]." ".
+			  $this->styles[$printingStyle]["td"]." ".
+			  $this->styles[$printingStyle]["td"]." ".$this->styles[$printingStyle]["trc"];
+	    }
+	    elseif($field == "user") {
+		$result = $this->styles[$printingStyle]["td"].$data[1]." ".
+			  $this->styles[$printingStyle]["td"]." ".
+			  $this->styles[$printingStyle]["td"]." ".
+			  $this->styles[$printingStyle]["td"]."∑".$storyPointsByUser." ".
+			  $this->styles[$printingStyle]["td"]." ".
+			  $this->styles[$printingStyle]["td"]."∑".
+			  $this->styles[$printingStyle]["td"]." ".$this->styles[$printingStyle]["trc"];
+	    }
+	}
+	elseif($printingStyle == "html") {
+	    if($field == "issue") {
+		$result = $this->styles[$printingStyle]["tr"].
+			    $this->styles[$printingStyle]["td"].$this->styles[$printingStyle]["tdc"].
+			    $this->styles[$printingStyle]["td"].$data["project"]["key"].$this->styles[$printingStyle]["tdc"].
+			    $this->styles[$printingStyle]["td"].$data["summary"].$this->styles[$printingStyle]["tdc"].
+			    $this->styles[$printingStyle]["td"].$data["customfield_10710"].$this->styles[$printingStyle]["tdc"].
+			    $this->styles[$printingStyle]["td"].$this->styles[$printingStyle]["tdc"].
+			    $this->styles[$printingStyle]["td"].$this->styles[$printingStyle]["tdc"].
+			    $this->styles[$printingStyle]["td"].$this->styles[$printingStyle]["tdc"].
+			    $this->styles[$printingStyle]["trc"];
+	    }
+	    elseif($field == "user") {
+		$result = $this->styles[$printingStyle]["tr"].
+			$this->styles[$printingStyle]["td"].$data[1].$this->styles[$printingStyle]["tdc"].
+			$this->styles[$printingStyle]["td"].$this->styles[$printingStyle]["tdc"].
+			$this->styles[$printingStyle]["td"].$this->styles[$printingStyle]["tdc"].
+			$this->styles[$printingStyle]["td"]."∑".$storyPointsByUser.$this->styles[$printingStyle]["tdc"].
+			$this->styles[$printingStyle]["td"].$this->styles[$printingStyle]["tdc"].
+			$this->styles[$printingStyle]["td"]."∑".$this->styles[$printingStyle]["tdc"].
+			$this->styles[$printingStyle]["td"].$this->styles[$printingStyle]["tdc"].
+			$this->styles[$printingStyle]["trc"];
+	    }
+	}
+	
+	return $result;
     }
 }
 
 $generator = new ScheduleGenerator();
-echo $generator->getInfo();
+echo $generator->getInfo("wikimarkup");
