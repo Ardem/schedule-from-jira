@@ -14,3 +14,8 @@ Generation order
 3. Start index.php in your browser.
 
 4. If you choose "html" mode you can see just a table in your browser. In case of "wikimarkup" mode you need to copy result from your browser. In your Confluence Editor you need to select "Insert -> Wiki Markup", paste it to opened window, press "Insert" and enjoy it!
+
+Pay attention
+==================
+
+You need a PHP5 with php5-curl library for using this generator.
