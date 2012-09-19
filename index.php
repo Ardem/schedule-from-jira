@@ -3,6 +3,7 @@
  * ScheduleGenerator class file
  *
  * @author Artem Demchenkov <ardemchenkov@gmail.com>
+ * @version 1.0
  */
 
 require_once './config.php';
@@ -26,6 +27,7 @@ class ScheduleGenerator extends ScheduleConfig
 	
 	$count = sizeof($this->users);
 	
+	// take a list of issues for all user from the list
 	for($i=0; $i<$count; $i++) {
 	
 	    $ch = curl_init();
@@ -35,9 +37,7 @@ class ScheduleGenerator extends ScheduleConfig
 		    "jql": "assignee = \''.$this->users[$i][0].'\' AND status=1 order by project",
 		    "startAt": 0,
 		    "fields": [
-	    		"project",
-			"summary",
-			"customfield_10710"
+	    		'.self::FIELDS.'
 		    ]
 		}';
 
@@ -61,13 +61,14 @@ class ScheduleGenerator extends ScheduleConfig
 	    $scheduleByUser    = "";
 	    $storyPointsByUser = 0;
 	    
+	    //use an every issue from the list for output generation
 	    for($m=0; $m<$countArray; $m++) {
-		$scheduleByUser .= $this->getStyled($printingStyle, "issue", $resultArray["issues"][$m]["fields"]);
+		$scheduleByUser .= $this->getView($printingStyle, "issue", $resultArray["issues"][$m]);
 		
 		$storyPointsByUser = $storyPointsByUser + $resultArray["issues"][$m]["fields"]["customfield_10710"];
 	    }
 
-	    $schedule .= $this->getStyled($printingStyle, "user", $this->users[$i], $storyPointsByUser).$scheduleByUser;
+	    $schedule .= $this->getView($printingStyle, "user", $this->users[$i], $storyPointsByUser).$scheduleByUser;
 	}
 	
 	$schedule .= $this->styles[$printingStyle]["footer"];
@@ -83,24 +84,24 @@ class ScheduleGenerator extends ScheduleConfig
      * @param int $storyPointsByUser
      * @return string $result
      */
-    public function getStyled($printingStyle, $field, $data, $storyPointsByUser = 0) {
+    public function getView($printingStyle, $field, $data, $storyPointsByUser = 0) {
 	if($printingStyle == "wikimarkup") {
 	    if($field == "issue") {
 		$result = $this->styles[$printingStyle]["td"]." ".
-			  $this->styles[$printingStyle]["td"].$data["project"]["key"]." ".
-			  $this->styles[$printingStyle]["td"].$data["summary"]." ".
-			  $this->styles[$printingStyle]["td"].$data["customfield_10710"]." ".
+			  $this->styles[$printingStyle]["td"].$data["fields"]["project"]["key"]." ".
+			  $this->styles[$printingStyle]["td"]."{JIRA: ".$data["key"]."} ".
+			  $this->styles[$printingStyle]["td"].$data["fields"]["customfield_10710"]." ".
 			  $this->styles[$printingStyle]["td"]." ".
 			  $this->styles[$printingStyle]["td"]." ".
 			  $this->styles[$printingStyle]["td"]." ".$this->styles[$printingStyle]["trc"];
 	    }
 	    elseif($field == "user") {
-		$result = $this->styles[$printingStyle]["td"].$data[1]." ".
+		$result = $this->styles[$printingStyle]["td"]."*{color:green}".$data[1]."{color}* ".
 			  $this->styles[$printingStyle]["td"]." ".
 			  $this->styles[$printingStyle]["td"]." ".
-			  $this->styles[$printingStyle]["td"]."∑".$storyPointsByUser." ".
+			  $this->styles[$printingStyle]["td"]."*{color:navy}∑".$storyPointsByUser."{color}* ".
 			  $this->styles[$printingStyle]["td"]." ".
-			  $this->styles[$printingStyle]["td"]."∑".
+			  $this->styles[$printingStyle]["td"]."*{color:navy}∑{color}*".
 			  $this->styles[$printingStyle]["td"]." ".$this->styles[$printingStyle]["trc"];
 	    }
 	}
@@ -108,9 +109,9 @@ class ScheduleGenerator extends ScheduleConfig
 	    if($field == "issue") {
 		$result = $this->styles[$printingStyle]["tr"].
 			    $this->styles[$printingStyle]["td"].$this->styles[$printingStyle]["tdc"].
-			    $this->styles[$printingStyle]["td"].$data["project"]["key"].$this->styles[$printingStyle]["tdc"].
-			    $this->styles[$printingStyle]["td"].$data["summary"].$this->styles[$printingStyle]["tdc"].
-			    $this->styles[$printingStyle]["td"].$data["customfield_10710"].$this->styles[$printingStyle]["tdc"].
+			    $this->styles[$printingStyle]["td"].$data["fields"]["project"]["key"].$this->styles[$printingStyle]["tdc"].
+			    $this->styles[$printingStyle]["td"].$data["fields"]["summary"]." (".$data["key"].") ".$this->styles[$printingStyle]["tdc"].
+			    $this->styles[$printingStyle]["td"].$data["fields"]["customfield_10710"].$this->styles[$printingStyle]["tdc"].
 			    $this->styles[$printingStyle]["td"].$this->styles[$printingStyle]["tdc"].
 			    $this->styles[$printingStyle]["td"].$this->styles[$printingStyle]["tdc"].
 			    $this->styles[$printingStyle]["td"].$this->styles[$printingStyle]["tdc"].
