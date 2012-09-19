@@ -34,7 +34,7 @@ class ScheduleGenerator extends ScheduleConfig
 	
 	    $data = '
 		{
-		    "jql": "assignee = \''.$this->users[$i][0].'\' AND status=1 order by project",
+		    "jql": "assignee = \''.$this->users[$i][0].'\' AND (status=\'Открыто\' OR status=\'В работе\' OR status=\'Открыта заново\') order by project",
 		    "startAt": 0,
 		    "fields": [
 	    		'.self::FIELDS.'
